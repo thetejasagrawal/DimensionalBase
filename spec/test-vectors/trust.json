@@ -1,0 +1,53 @@
+{
+  "_description": "DBPS v1.0 Section 12 — Canonical trust model test vectors.",
+  "_version": "1.0.0",
+  "tests": [
+    {
+      "id": "trust_001",
+      "description": "New agent starts with default trust 0.5",
+      "operations": [
+        {"op": "record_entry", "agent": "agent-new"}
+      ],
+      "expected_trust_gte": 0.45,
+      "expected_trust_lte": 0.55
+    },
+    {
+      "id": "trust_002",
+      "description": "Confirmation increases trust for confirmed agent",
+      "operations": [
+        {"op": "record_entry", "agent": "a"},
+        {"op": "record_entry", "agent": "b"},
+        {"op": "record_confirmation", "confirmer": "b", "confirmed": "a", "domain": "task"}
+      ],
+      "query_agent": "a",
+      "expected_trust_gte": 0.5,
+      "_note": "Trust of confirmed agent must increase"
+    },
+    {
+      "id": "trust_003",
+      "description": "Multiple confirmations build higher trust",
+      "operations": [
+        {"op": "record_entry", "agent": "a"},
+        {"op": "record_entry", "agent": "b"},
+        {"op": "record_entry", "agent": "c"},
+        {"op": "record_confirmation", "confirmer": "b", "confirmed": "a", "domain": "task"},
+        {"op": "record_confirmation", "confirmer": "c", "confirmed": "a", "domain": "task"},
+        {"op": "record_confirmation", "confirmer": "b", "confirmed": "a", "domain": "task"}
+      ],
+      "query_agent": "a",
+      "expected_trust_gte": 0.55
+    },
+    {
+      "id": "trust_004",
+      "description": "PageRank produces valid distribution",
+      "operations": [
+        {"op": "record_entry", "agent": "a"},
+        {"op": "record_entry", "agent": "b"},
+        {"op": "record_entry", "agent": "c"},
+        {"op": "record_confirmation", "confirmer": "b", "confirmed": "a", "domain": "task"},
+        {"op": "record_confirmation", "confirmer": "c", "confirmed": "a", "domain": "task"}
+      ],
+      "_note": "PageRank values must sum to approximately 1.0 and all be non-negative"
+    }
+  ]
+}

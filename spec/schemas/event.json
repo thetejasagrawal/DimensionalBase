@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dimensionalbase.com/schemas/event.json",
+  "title": "DBPS Event",
+  "description": "Canonical JSON schema for a DimensionalBase event (DBPS v1.0 Section 13).",
+  "type": "object",
+  "required": ["type", "path", "timestamp"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["change", "delete", "conflict", "gap", "stale", "summary"],
+      "description": "Event type. See Section 13 for exact triggering conditions."
+    },
+    "path": {
+      "type": "string",
+      "description": "The path of the entry that triggered this event."
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Event-specific payload. Contents vary by event type."
+    },
+    "source_owner": {
+      "type": ["string", "null"],
+      "description": "The agent whose action triggered this event, if applicable."
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Unix timestamp (float64) when the event was fired."
+    }
+  }
+}

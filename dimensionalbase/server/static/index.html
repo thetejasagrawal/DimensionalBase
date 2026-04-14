@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DimensionalBase Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ───────────── Header ───────────── -->
+  <header class="header">
+    <div class="header-left">
+      <h1 class="header-title">
+        <span class="header-logo">&#9671;</span>
+        DimensionalBase
+      </h1>
+      <span class="version-badge" id="versionBadge">v0.5.0</span>
+    </div>
+    <div class="header-right">
+      <span class="connection-indicator" id="wsIndicator" title="WebSocket disconnected">
+        <span class="connection-dot"></span>
+        <span class="connection-label" id="wsLabel">Disconnected</span>
+      </span>
+    </div>
+  </header>
+
+  <!-- ───────────── Layout ───────────── -->
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">&#9776;</button>
+
+      <!-- System Status -->
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">System Status</h2>
+        <div class="status-card" id="statusCard">
+          <div class="status-row">
+            <span class="status-label">Entries</span>
+            <span class="status-value" id="statEntries">&mdash;</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Owners</span>
+            <span class="status-value" id="statOwners">&mdash;</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Namespaces</span>
+            <span class="status-value" id="statNamespaces">&mdash;</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Conflicts</span>
+            <span class="status-value status-conflicts" id="statConflicts">&mdash;</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Gaps</span>
+            <span class="status-value status-gaps" id="statGaps">&mdash;</span>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Stale</span>
+            <span class="status-value status-stale" id="statStale">&mdash;</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Agent Trust (sidebar summary) -->
+      <section class="sidebar-section">
+        <h2 class="sidebar-heading">Agent Trust</h2>
+        <div id="sidebarTrust" class="sidebar-trust-list">
+          <p class="muted">Loading...</p>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+
+      <!-- Tab Bar -->
+      <nav class="tab-bar" role="tablist">
+        <button class="tab active" data-tab="knowledge" role="tab" aria-selected="true">Knowledge</button>
+        <button class="tab" data-tab="events" role="tab" aria-selected="false">Events</button>
+        <button class="tab" data-tab="trust" role="tab" aria-selected="false">Trust</button>
+        <button class="tab" data-tab="provenance" role="tab" aria-selected="false">Provenance</button>
+      </nav>
+
+      <!-- ── Knowledge Tab ── -->
+      <section class="tab-panel active" id="panel-knowledge" role="tabpanel">
+        <div class="panel-toolbar">
+          <input
+            type="search"
+            class="search-input"
+            id="knowledgeSearch"
+            placeholder="Filter by path, value, or owner..."
+            autocomplete="off"
+          >
+          <span class="entry-count" id="entryCount"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="knowledgeTable">
+            <thead>
+              <tr>
+                <th>Path</th>
+                <th>Value</th>
+                <th>Owner</th>
+                <th>Type</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody id="knowledgeBody">
+              <tr><td colspan="5" class="muted">Loading entries...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── Events Tab ── -->
+      <section class="tab-panel" id="panel-events" role="tabpanel">
+        <div class="panel-toolbar">
+          <span class="event-count" id="eventCount">0 events</span>
+          <button class="btn-small" id="clearEvents">Clear</button>
+        </div>
+        <div class="event-feed" id="eventFeed">
+          <p class="muted" id="eventPlaceholder">Waiting for events...</p>
+        </div>
+      </section>
+
+      <!-- ── Trust Tab ── -->
+      <section class="tab-panel" id="panel-trust" role="tabpanel">
+        <h2 class="panel-title">Agent Trust Scores</h2>
+        <div class="trust-chart" id="trustChart">
+          <p class="muted">Loading trust data...</p>
+        </div>
+      </section>
+
+      <!-- ── Provenance Tab ── -->
+      <section class="tab-panel" id="panel-provenance" role="tabpanel">
+        <h2 class="panel-title">Provenance Lookup</h2>
+        <div class="provenance-controls">
+          <input
+            type="text"
+            class="search-input"
+            id="provenancePath"
+            placeholder="Enter entry path, e.g. project/design/api"
+            autocomplete="off"
+          >
+          <button class="btn-primary" id="provenanceLookup">Trace Lineage</button>
+        </div>
+        <div class="provenance-result" id="provenanceResult">
+          <p class="muted">Enter a path and click Trace Lineage to view provenance chain.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

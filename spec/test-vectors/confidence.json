@@ -1,0 +1,60 @@
+{
+  "_description": "DBPS v1.0 Section 11 — Canonical confidence model test vectors. Defines exact Beta(α,β) states after fixed sequences of operations.",
+  "_version": "1.0.0",
+  "initial_state": {
+    "_note": "register(path, confidence=0.8, owner='agent-a')",
+    "alpha": 1.8,
+    "beta": 1.2,
+    "_formula": "alpha = 1 + confidence, beta = 1 + (1 - confidence)"
+  },
+  "tests": [
+    {
+      "id": "conf_001",
+      "description": "Single registration at confidence 0.8",
+      "operations": [
+        {"op": "register", "path": "x", "confidence": 0.8, "owner": "a"}
+      ],
+      "expected_confidence_gte": 0.5,
+      "expected_confidence_lte": 1.0
+    },
+    {
+      "id": "conf_002",
+      "description": "Confirmation increases confidence",
+      "operations": [
+        {"op": "register", "path": "x", "confidence": 0.5, "owner": "a"},
+        {"op": "confirm", "path": "x", "confirmer": "b"}
+      ],
+      "expected_confidence_gte": 0.5,
+      "_note": "Confidence after confirmation must be strictly > confidence before"
+    },
+    {
+      "id": "conf_003",
+      "description": "Contradiction decreases confidence",
+      "operations": [
+        {"op": "register", "path": "x", "confidence": 0.8, "owner": "a"},
+        {"op": "contradict", "path": "x", "contradicter": "b"}
+      ],
+      "expected_confidence_lte": 0.8,
+      "_note": "Confidence after contradiction must be strictly < confidence before"
+    },
+    {
+      "id": "conf_004",
+      "description": "Multiple confirmations build strong confidence",
+      "operations": [
+        {"op": "register", "path": "x", "confidence": 0.5, "owner": "a"},
+        {"op": "confirm", "path": "x", "confirmer": "b"},
+        {"op": "confirm", "path": "x", "confirmer": "c"},
+        {"op": "confirm", "path": "x", "confirmer": "d"},
+        {"op": "confirm", "path": "x", "confirmer": "e"}
+      ],
+      "expected_confidence_gte": 0.6
+    },
+    {
+      "id": "conf_005",
+      "description": "Unknown path returns neutral confidence",
+      "operations": [],
+      "query_path": "nonexistent",
+      "expected_confidence": 0.5
+    }
+  ]
+}

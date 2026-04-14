@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "dimensionalbase": {
+      "command": "dimensionalbase-mcp",
+      "args": ["--db-path", ":memory:"],
+      "description": "DimensionalBase — shared knowledge coordination for AI agents"
+    }
+  }
+}

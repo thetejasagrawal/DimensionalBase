@@ -1,0 +1,46 @@
+{
+  "_description": "DBPS v1.0 Section 5 — Canonical glob matching test vectors. Any conformant implementation MUST produce identical results.",
+  "_version": "1.0.0",
+  "tests": [
+    {"id": "exact_001", "pattern": "task/auth", "path": "task/auth", "expected": true},
+    {"id": "exact_002", "pattern": "task/auth", "path": "task/deploy", "expected": false},
+    {"id": "exact_003", "pattern": "task/auth", "path": "task/auth/jwt", "expected": false},
+    {"id": "exact_004", "pattern": "task", "path": "task", "expected": true},
+    {"id": "exact_005", "pattern": "a", "path": "b", "expected": false},
+
+    {"id": "star_001", "pattern": "task/*", "path": "task/auth", "expected": true},
+    {"id": "star_002", "pattern": "task/*", "path": "task/deploy", "expected": true},
+    {"id": "star_003", "pattern": "task/*", "path": "task/auth/jwt", "expected": false, "_note": "* does NOT cross / boundary"},
+    {"id": "star_004", "pattern": "task/*", "path": "task", "expected": false},
+    {"id": "star_005", "pattern": "*/auth", "path": "task/auth", "expected": true},
+    {"id": "star_006", "pattern": "*/auth", "path": "project/auth", "expected": true},
+    {"id": "star_007", "pattern": "*/auth", "path": "task/deploy", "expected": false},
+    {"id": "star_008", "pattern": "*", "path": "task", "expected": true},
+    {"id": "star_009", "pattern": "*", "path": "task/auth", "expected": false},
+
+    {"id": "dstar_001", "pattern": "task/**", "path": "task", "expected": true, "_note": "** matches zero segments"},
+    {"id": "dstar_002", "pattern": "task/**", "path": "task/auth", "expected": true},
+    {"id": "dstar_003", "pattern": "task/**", "path": "task/auth/jwt", "expected": true},
+    {"id": "dstar_004", "pattern": "task/**", "path": "task/auth/jwt/key", "expected": true},
+    {"id": "dstar_005", "pattern": "task/**", "path": "deploy/v2", "expected": false},
+    {"id": "dstar_006", "pattern": "**", "path": "anything", "expected": true},
+    {"id": "dstar_007", "pattern": "**", "path": "a/b/c/d/e", "expected": true},
+    {"id": "dstar_008", "pattern": "**/auth", "path": "task/auth", "expected": true},
+    {"id": "dstar_009", "pattern": "**/auth", "path": "project/infra/auth", "expected": true},
+    {"id": "dstar_010", "pattern": "**/auth", "path": "auth", "expected": true},
+    {"id": "dstar_011", "pattern": "**/auth", "path": "task/deploy", "expected": false},
+    {"id": "dstar_012", "pattern": "task/**/status", "path": "task/status", "expected": true, "_note": "** matches zero segments in middle"},
+    {"id": "dstar_013", "pattern": "task/**/status", "path": "task/auth/status", "expected": true},
+    {"id": "dstar_014", "pattern": "task/**/status", "path": "task/auth/jwt/status", "expected": true},
+    {"id": "dstar_015", "pattern": "task/**/status", "path": "task/auth/version", "expected": false},
+
+    {"id": "mixed_001", "pattern": "task/*/status", "path": "task/auth/status", "expected": true},
+    {"id": "mixed_002", "pattern": "task/*/status", "path": "task/auth/jwt/status", "expected": false, "_note": "* only matches one segment"},
+    {"id": "mixed_003", "pattern": "*/deploy/*", "path": "task/deploy/v2", "expected": true},
+    {"id": "mixed_004", "pattern": "*/deploy/*", "path": "task/deploy/v2/status", "expected": false},
+
+    {"id": "edge_001", "pattern": "", "path": "", "expected": true},
+    {"id": "edge_002", "pattern": "a/b/c", "path": "a/b/c", "expected": true},
+    {"id": "edge_003", "pattern": "a/b/c", "path": "a/b", "expected": false}
+  ]
+}

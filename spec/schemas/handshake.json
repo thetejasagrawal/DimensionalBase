@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dimensionalbase.com/schemas/handshake.json",
+  "title": "DBPS Channel Negotiation Handshake",
+  "description": "Schema for the channel negotiation message exchanged between DBPS implementations (DBPS v1.0 Section 7).",
+  "type": "object",
+  "required": ["protocol_version", "channels"],
+  "properties": {
+    "protocol_version": {
+      "type": "string",
+      "description": "DBPS protocol version. Semantic versioning.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0"]
+    },
+    "implementation": {
+      "type": "string",
+      "description": "Implementation identifier (e.g., 'dimensionalbase-python/0.3.0')."
+    },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["TEXT", "EMBEDDING", "TENSOR"]
+      },
+      "minItems": 1,
+      "description": "Channels supported by this implementation, ordered by preference (highest first)."
+    },
+    "embedding": {
+      "type": "object",
+      "description": "Required when EMBEDDING channel is listed. Describes the embedding model.",
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "description": "Model identifier. Two implementations MUST use the same model_id to share embeddings.",
+          "examples": ["all-MiniLM-L6-v2", "text-embedding-3-small"]
+        },
+        "dimension": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Embedding dimensionality. MUST match exactly."
+        },
+        "normalization": {
+          "type": "string",
+          "enum": ["L2", "none"],
+          "description": "Normalization scheme. DBPS requires L2."
+        }
+      },
+      "required": ["model_id", "dimension", "normalization"]
+    },
+    "tensor": {
+      "type": "object",
+      "description": "Required when TENSOR channel is listed. Describes the model architecture.",
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "description": "Full model identifier (e.g., 'meta-llama/Llama-3.1-8B')."
+        },
+        "num_layers": {"type": "integer", "minimum": 1},
+        "num_kv_heads": {"type": "integer", "minimum": 1},
+        "head_dim": {"type": "integer", "minimum": 1},
+        "precision": {
+          "type": "string",
+          "enum": ["fp16", "bf16", "fp32"],
+          "description": "KV cache precision."
+        }
+      },
+      "required": ["model_id", "num_layers", "num_kv_heads", "head_dim", "precision"]
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "active_reasoning": {"type": "boolean", "default": true},
+        "confidence_tracking": {"type": "boolean", "default": true},
+        "trust_model": {"type": "boolean", "default": true},
+        "provenance": {"type": "boolean", "default": true}
+      },
+      "description": "Optional reasoning capabilities supported by this implementation."
+    }
+  }
+}

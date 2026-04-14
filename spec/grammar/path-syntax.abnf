@@ -1,0 +1,36 @@
+; DBPS v1.0 Section 5 — Path Addressing Formal Grammar
+;
+; Defines the syntax of knowledge entry paths in the DimensionalBase Protocol.
+; All conformant implementations MUST accept paths matching this grammar and
+; MUST reject paths that do not match.
+;
+; Reference: RFC 5234 (ABNF)
+
+path            = segment *( "/" segment )
+
+segment         = 1*segment-char
+
+segment-char    = ALPHA / DIGIT / "-" / "_" / "."
+
+; Patterns extend paths with wildcards (used in get(), subscribe(), ACL)
+
+pattern         = pattern-seg *( "/" pattern-seg )
+
+pattern-seg     = segment / "*" / "**"
+
+; "*" matches exactly one segment (does not cross "/" boundaries)
+; "**" matches zero or more segments (crosses "/" boundaries)
+
+; Examples:
+;   "task/auth/status"    — valid path
+;   "task/**"             — valid pattern (matches task, task/auth, task/auth/jwt, ...)
+;   "task/*/status"       — valid pattern (matches task/auth/status, task/deploy/status)
+;   "task/ auth"          — INVALID (space in segment)
+;   "../etc/passwd"       — INVALID (.. not allowed)
+;   ""                    — INVALID (empty path)
+
+; Constraints (not expressible in ABNF):
+;   - Maximum path length: 512 characters
+;   - No null bytes (U+0000)
+;   - No directory traversal ("..") segments
+;   - Segments are case-sensitive

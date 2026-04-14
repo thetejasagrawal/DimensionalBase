@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  dimensionalbase:
+    build: .
+    ports:
+      - "8420:8420"
+    environment:
+      - DMB_BACKEND=sqlite
+      - DMB_DB_PATH=/data/dimensionalbase.db
+      - DMB_EMBEDDING_PROVIDER=local
+      - DMB_API_KEY=${DMB_API_KEY:-change-me}
+    volumes:
+      - dmb-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8420/healthz')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  dmb-data:

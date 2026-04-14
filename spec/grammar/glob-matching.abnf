@@ -1,0 +1,52 @@
+; DBPS v1.0 Section 5 — Glob Matching Algorithm (Pseudocode)
+;
+; This document formally specifies the glob matching algorithm used
+; throughout the DimensionalBase Protocol.  All implementations MUST
+; produce results identical to this algorithm for every input in the
+; conformance test vectors.
+
+; ALGORITHM: dbps_match(pattern, path) -> bool
+;
+; 1. If pattern == "**", return true
+; 2. If pattern == path (exact string equality), return true
+; 3. If pattern contains no "*" characters, return pattern == path
+; 4. Split pattern by "/" into pat_parts
+; 5. Split path by "/" into path_parts
+; 6. Call match_parts(pat_parts, 0, path_parts, 0)
+
+; ALGORITHM: match_parts(pat, pi, path, qi) -> bool
+;
+; While pi < len(pat) AND qi < len(path):
+;   token = pat[pi]
+;
+;   If token == "**":
+;     If pi == len(pat) - 1:
+;       return true                          ; ** at end matches all remaining
+;     For skip = qi to len(path):
+;       If match_parts(pat, pi+1, path, skip):
+;         return true                        ; ** matches 0..N segments
+;     return false
+;
+;   Else if token == "*":
+;     pi += 1, qi += 1                      ; * matches exactly one segment
+;
+;   Else if token == path[qi]:
+;     pi += 1, qi += 1                      ; literal match
+;
+;   Else:
+;     return false                           ; mismatch
+;
+; ; Consume trailing ** patterns (match zero segments)
+; While pi < len(pat) AND pat[pi] == "**":
+;   pi += 1
+;
+; return pi == len(pat) AND qi == len(path)
+
+; NOTES:
+; - This algorithm has worst-case O(n*m) where n = len(pattern) and
+;   m = len(path), due to ** backtracking.  In practice, patterns are
+;   short (< 10 segments) so this is not a concern.
+; - The algorithm is deterministic: given the same (pattern, path) pair,
+;   every conformant implementation MUST return the same boolean result.
+; - The conformance test vectors in spec/test-vectors/glob-matching.json
+;   MUST all pass for any conformant implementation.

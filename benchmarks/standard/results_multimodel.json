@@ -1,0 +1,56 @@
+{
+  "models": {
+    "GPT-5.2": {
+      "full_context": [
+        2,
+        10
+      ],
+      "dimensionalbase": [
+        4,
+        10
+      ]
+    },
+    "GPT-5.1": {
+      "full_context": [
+        0,
+        10
+      ],
+      "dimensionalbase": [
+        0,
+        10
+      ]
+    },
+    "GPT-5": {
+      "full_context": [
+        0,
+        10
+      ],
+      "dimensionalbase": [
+        0,
+        10
+      ]
+    },
+    "Claude Sonnet 4": {
+      "full_context": [
+        1,
+        10
+      ],
+      "dimensionalbase": [
+        4,
+        10
+      ]
+    },
+    "Claude Opus 4": {
+      "full_context": [
+        1,
+        10
+      ],
+      "dimensionalbase": [
+        1,
+        10
+      ]
+    }
+  },
+  "budget": 2000,
+  "n": 10
+}

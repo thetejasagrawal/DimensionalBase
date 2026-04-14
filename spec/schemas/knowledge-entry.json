@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dimensionalbase.com/schemas/knowledge-entry.json",
+  "title": "DBPS KnowledgeEntry",
+  "description": "Canonical JSON schema for a DimensionalBase knowledge entry (DBPS v1.0 Section 4).",
+  "type": "object",
+  "required": ["id", "path", "value", "owner", "type", "confidence", "version", "ttl", "created_at", "updated_at"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier (12-character hex string).",
+      "minLength": 1
+    },
+    "path": {
+      "type": "string",
+      "description": "Hierarchical address. Segments separated by '/'. Allowed characters: [a-zA-Z0-9/_.-].",
+      "pattern": "^[a-zA-Z0-9/_. -]+$",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "value": {
+      "type": "string",
+      "description": "Human-readable text content.",
+      "minLength": 1,
+      "maxLength": 1048576
+    },
+    "owner": {
+      "type": "string",
+      "description": "Agent identifier that wrote this entry (single source of truth).",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": ["fact", "decision", "plan", "observation"],
+      "description": "Knowledge type classification."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Self-reported confidence (0.0 = no confidence, 1.0 = certain)."
+    },
+    "refs": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": [],
+      "description": "Ordered list of related entry paths (this IS the knowledge graph)."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonically increasing per-path integer. Incremented on every update."
+    },
+    "ttl": {
+      "type": "string",
+      "enum": ["turn", "session", "persistent"],
+      "description": "Time-to-live policy."
+    },
+    "created_at": {
+      "type": "number",
+      "description": "Unix timestamp (float64) when the entry was first created."
+    },
+    "updated_at": {
+      "type": "number",
+      "description": "Unix timestamp (float64) of the last update."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "default": {},
+      "description": "Arbitrary key-value pairs for extensibility. Keys starting with '_' are reserved."
+    },
+    "embedding": {
+      "description": "Optional. CBOR-encoded float32 vector, L2-normalized to unit length. Present only in DBPS-Embedding and DBPS-Tensor tiers.",
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "properties": {
+            "dimension": {"type": "integer", "minimum": 1},
+            "normalization": {"type": "string", "const": "L2"},
+            "data": {"type": "string", "contentEncoding": "base64", "description": "Base64-encoded IEEE 754 float32 little-endian bytes."}
+          },
+          "required": ["dimension", "normalization", "data"]
+        }
+      ]
+    }
+  }
+}
