@@ -1,10 +1,13 @@
 """Tests for the security layer — auth, ACL, validation."""
 
+import time
+
 import pytest
 
 from dimensionalbase import DimensionalBase
 from dimensionalbase.security.auth import APIKeyManager, AuthError
 from dimensionalbase.security.acl import AccessController, AccessDeniedError, AgentPolicy
+from dimensionalbase.security.encryption import EncryptionError, FernetEncryptionProvider
 from dimensionalbase.security.validation import (
     validate_confidence,
     validate_owner,
@@ -35,7 +38,7 @@ class TestAPIKeyManager:
         mgr = APIKeyManager()
         key = mgr.generate_key("agent-1")
         assert mgr.revoke(key) is True
-        with pytest.raises(AuthError, match="revoked"):
+        with pytest.raises(AuthError, match="Invalid"):
             mgr.validate(key)
         mgr.close()
 
@@ -53,6 +56,23 @@ class TestAPIKeyManager:
         keys = mgr.list_keys()
         assert len(keys) == 2
         mgr.close()
+
+    def test_revocation_reaches_other_process_after_cache_ttl(self, tmp_path):
+        db_path = str(tmp_path / "keys.db")
+        mgr_a = APIKeyManager(db_path=db_path, cache_ttl_seconds=0.01)
+        mgr_b = APIKeyManager(db_path=db_path, cache_ttl_seconds=0.01)
+
+        key = mgr_a.generate_key("agent-1")
+        assert mgr_a.validate(key).agent_id == "agent-1"
+
+        assert mgr_b.revoke(key) is True
+        time.sleep(0.02)
+
+        with pytest.raises(AuthError, match="Invalid"):
+            mgr_a.validate(key)
+
+        mgr_a.close()
+        mgr_b.close()
 
 
 class TestAccessControl:
@@ -124,6 +144,18 @@ class TestValidation:
     def test_invalid_chars_raises(self):
         with pytest.raises(ValidationError, match="invalid"):
             validate_path("task/<script>alert</script>")
+
+    def test_path_cannot_start_with_slash(self):
+        with pytest.raises(ValidationError, match="start"):
+            validate_path("/task/auth/status")
+
+    def test_path_cannot_end_with_slash(self):
+        with pytest.raises(ValidationError, match="end"):
+            validate_path("task/auth/status/")
+
+    def test_path_cannot_have_empty_segments(self):
+        with pytest.raises(ValidationError, match="empty segments"):
+            validate_path("task//auth/status")
 
     def test_valid_value(self):
         assert validate_value("hello world") == "hello world"
@@ -213,3 +245,9 @@ class TestSecureDimensionalBase:
         entry = secure.put("x", "v", owner="a")
         assert entry.path == "x"
         db.close()
+
+
+class TestEncryption:
+    def test_provider_requires_explicit_key_or_passphrase(self):
+        with pytest.raises(EncryptionError, match="explicit key or passphrase"):
+            FernetEncryptionProvider()

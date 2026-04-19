@@ -19,7 +19,7 @@ Then read the specific module you'll work on.
 
 Clone the repository and install in development mode:
 ```bash
-git clone https://github.com/txtgrey/DimensionalBase.git
+git clone https://github.com/thetejasagrawal/DimensionalBase.git
 cd DimensionalBase
 pip install -e ".[dev]"
 pre-commit install

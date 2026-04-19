@@ -12,6 +12,7 @@ from dimensionalbase.security.auth import APIKeyManager
 from dimensionalbase.security.middleware import SecureDimensionalBase
 
 DEFAULT_CONFIG_FILE = ".dimensionalbase.json"
+_LOCALHOST_CORS_REGEX = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
 
 def _parse_bool(value: Optional[str], default: bool) -> bool:
@@ -90,12 +91,18 @@ class RuntimeSettings:
 
 @dataclass
 class ServerSettings(RuntimeSettings):
-    host: str = "0.0.0.0"
+    host: str = "127.0.0.1"
     port: int = 8420
     reload: bool = False
     secure: bool = True
     api_key: Optional[str] = None
     admin_agent_id: str = "admin"
+    cors_origins: str = ""
+    cors_origin_regex: Optional[str] = _LOCALHOST_CORS_REGEX
+    rate_limit_read: float = 100.0
+    rate_limit_write: float = 50.0
+    max_request_body_bytes: int = 1_048_576
+    request_timeout_seconds: float = 30.0
 
     @classmethod
     def from_sources(
@@ -124,6 +131,12 @@ class ServerSettings(RuntimeSettings):
                     "insecure": env.get("DMB_INSECURE"),
                     "api_key": env.get("DMB_API_KEY"),
                     "admin_agent_id": env.get("DMB_ADMIN_AGENT_ID"),
+                    "cors_origins": env.get("DMB_CORS_ORIGINS"),
+                    "cors_origin_regex": env.get("DMB_CORS_ORIGIN_REGEX"),
+                    "rate_limit_read": env.get("DMB_RATE_LIMIT_READ"),
+                    "rate_limit_write": env.get("DMB_RATE_LIMIT_WRITE"),
+                    "max_request_body_bytes": env.get("DMB_MAX_REQUEST_BODY_BYTES"),
+                    "request_timeout_seconds": env.get("DMB_REQUEST_TIMEOUT"),
                 }.items()
                 if v is not None
             }
@@ -143,12 +156,18 @@ class ServerSettings(RuntimeSettings):
             openai_api_key=base.openai_api_key,
             encryption_key=base.encryption_key,
             encryption_passphrase=base.encryption_passphrase,
-            host=str(merged.get("host") or "0.0.0.0"),
+            host=str(merged.get("host") or "127.0.0.1"),
             port=int(merged.get("port") or 8420),
             reload=bool(merged.get("reload")) if isinstance(merged.get("reload"), bool) else _parse_bool(merged.get("reload"), False),
             secure=secure,
             api_key=merged.get("api_key"),
             admin_agent_id=str(merged.get("admin_agent_id") or "admin"),
+            cors_origins=str(merged.get("cors_origins") or ""),
+            cors_origin_regex=merged.get("cors_origin_regex") or _LOCALHOST_CORS_REGEX,
+            rate_limit_read=float(merged.get("rate_limit_read") or 100.0),
+            rate_limit_write=float(merged.get("rate_limit_write") or 50.0),
+            max_request_body_bytes=int(merged.get("max_request_body_bytes") or 1_048_576),
+            request_timeout_seconds=float(merged.get("request_timeout_seconds") or 30.0),
         )
 
 

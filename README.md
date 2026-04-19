@@ -6,8 +6,8 @@
 
 [![PyPI](https://img.shields.io/pypi/v/dimensionalbase)](https://pypi.org/project/dimensionalbase/)
 [![Python](https://img.shields.io/pypi/pyversions/dimensionalbase)](https://pypi.org/project/dimensionalbase/)
-[![License](https://img.shields.io/github/license/txtgrey/DimensionalBase)](LICENSE)
-[![Tests](https://img.shields.io/github/actions/workflow/status/txtgrey/DimensionalBase/ci.yml?label=tests)](https://github.com/txtgrey/DimensionalBase/actions)
+[![License](https://img.shields.io/github/license/thetejasagrawal/DimensionalBase)](LICENSE)
+[![Tests](https://img.shields.io/github/actions/workflow/status/thetejasagrawal/DimensionalBase/ci.yml?label=tests)](https://github.com/thetejasagrawal/DimensionalBase/actions)
 
 ---
 
@@ -25,9 +25,24 @@ The current implementation uses a NumPy-backed `VectorStore` for semantic search
 pip install dimensionalbase
 ```
 
-With embeddings (recommended):
+With command-line tools:
 ```bash
-pip install dimensionalbase[embeddings-local]   # sentence-transformers, 22MB, free
+pip install dimensionalbase[cli]
+```
+
+With the secured REST server:
+```bash
+pip install dimensionalbase[server,security]
+```
+
+With MCP transport support (Python 3.10+):
+```bash
+pip install dimensionalbase[mcp]
+```
+
+With embeddings (recommended when you need semantic retrieval):
+```bash
+pip install dimensionalbase[embeddings-local]   # sentence-transformers, large local model stack
 pip install dimensionalbase[embeddings-openai]   # OpenAI text-embedding-3-small
 ```
 
@@ -108,9 +123,9 @@ Under the hood:
 
 | Extra | Package | Purpose |
 |---|---|---|
-| `embeddings-local` | sentence-transformers | Local 384-dim embeddings (22MB, free) |
+| `embeddings-local` | sentence-transformers | Local 384-dim embeddings (large model dependency set) |
 | `embeddings-openai` | openai | OpenAI text-embedding-3-small |
-| `mcp` | mcp | MCP server for Claude Code / Cursor |
+| `mcp` | mcp | MCP server for Claude Code / Cursor (Python 3.10+) |
 | `server` | fastapi, uvicorn | REST API server |
 | `cli` | click, rich | Command-line interface |
 | `langchain` | langchain-core | LangChain memory + tools |
@@ -139,6 +154,10 @@ See [`examples/`](examples/) for:
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+
+## Packaging
+
+The published distribution is expected to ship both `sdist` and wheel artifacts, including the dashboard assets under `dimensionalbase/server/static/`. Release validation uses `python -m build` and `python -m twine check dist/*`.
 
 ## Code of Conduct
 

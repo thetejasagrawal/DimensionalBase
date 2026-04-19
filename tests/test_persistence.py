@@ -1,5 +1,7 @@
 """Tests for SQLite persistence and schema migration."""
 
+import hashlib
+
 import numpy as np
 import pytest
 
@@ -15,7 +17,11 @@ class _PersistentEmbeddingProvider(EmbeddingProvider):
         self._dim = dim
 
     def embed(self, text: str) -> np.ndarray:
-        rng = np.random.RandomState(hash((self._name, text)) % (2**31))
+        seed = int.from_bytes(
+            hashlib.sha256(f"{self._name}:{text}".encode()).digest()[:4],
+            byteorder="big",
+        )
+        rng = np.random.RandomState(seed)
         vec = rng.randn(self._dim).astype(np.float32)
         norm = np.linalg.norm(vec)
         return vec / norm if norm > 1e-12 else vec

@@ -5,6 +5,11 @@ Entry point for ``python -m dimensionalbase.server`` or ``dimensionalbase-server
 from __future__ import annotations
 
 import argparse
+import sys
+
+
+def _is_loopback_host(host: str) -> bool:
+    return host in {"127.0.0.1", "localhost", "::1"}
 
 
 def main() -> None:
@@ -39,6 +44,9 @@ def main() -> None:
 
     from dimensionalbase.runtime import ServerSettings, build_database, wrap_for_server
     from dimensionalbase.server.app import create_app
+    from dimensionalbase.server.logging_config import configure_logging
+
+    configure_logging()
 
     settings = ServerSettings.from_sources(
         config_path=args.config,
@@ -55,9 +63,26 @@ def main() -> None:
         },
     )
     db = wrap_for_server(build_database(settings), settings)
-    app = create_app(db)
+    if not settings.secure:
+        print(
+            "WARNING: DimensionalBase is starting with authentication disabled.",
+            file=sys.stderr,
+        )
+        if not _is_loopback_host(settings.host):
+            print(
+                f"WARNING: insecure mode on {settings.host} exposes the server to the network.",
+                file=sys.stderr,
+            )
+    app = create_app(db, server_config={
+        "cors_origins": [o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+        "cors_origin_regex": settings.cors_origin_regex,
+        "rate_limit_read": settings.rate_limit_read,
+        "rate_limit_write": settings.rate_limit_write,
+        "max_request_body_bytes": settings.max_request_body_bytes,
+        "request_timeout_seconds": settings.request_timeout_seconds,
+    })
 
-    uvicorn.run(app, host=settings.host, port=settings.port, reload=settings.reload)
+    uvicorn.run(app, host=settings.host, port=settings.port, reload=settings.reload, timeout_graceful_shutdown=10)
 
 
 if __name__ == "__main__":

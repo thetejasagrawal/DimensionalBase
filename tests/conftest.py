@@ -2,6 +2,8 @@
 Shared test fixtures for DimensionalBase test suite.
 """
 
+import hashlib
+
 import numpy as np
 import pytest
 
@@ -21,7 +23,11 @@ class MockEmbeddingProvider(EmbeddingProvider):
 
     def embed(self, text: str) -> np.ndarray:
         if text not in self._cache:
-            rng = np.random.RandomState(hash(text) % (2**31))
+            seed = int.from_bytes(
+                hashlib.sha256(text.encode()).digest()[:4],
+                byteorder="big",
+            )
+            rng = np.random.RandomState(seed)
             vec = rng.randn(self._dim).astype(np.float32)
             norm = np.linalg.norm(vec)
             if norm > 1e-12:

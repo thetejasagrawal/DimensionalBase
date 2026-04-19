@@ -37,6 +37,12 @@ def validate_path(path: str) -> str:
         raise ValidationError("Path contains null bytes")
     if ".." in path:
         raise ValidationError("Path contains directory traversal (..) ")
+    if path.startswith("/"):
+        raise ValidationError("Path cannot start with '/'")
+    if path.endswith("/"):
+        raise ValidationError("Path cannot end with '/'")
+    if "//" in path:
+        raise ValidationError("Path cannot contain empty segments ('//')")
     if not _PATH_PATTERN.match(path):
         raise ValidationError(
             f"Path contains invalid characters. Allowed: [a-zA-Z0-9/_.-]"

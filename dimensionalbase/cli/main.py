@@ -1,20 +1,10 @@
 """
 DimensionalBase CLI — manage, inspect, and operate a DimensionalBase instance.
-
-Usage::
-
-    db status
-    db put task/auth/status "JWT expired" --owner backend-agent
-    db get "task/**" --budget 500 --query "What's blocking deploy?"
-    db trust-report
-    db export --output backup.json
 """
 
 from __future__ import annotations
 
 import json
-import sys
-from typing import Optional
 
 try:
     import click
@@ -34,8 +24,18 @@ from dimensionalbase.runtime import (
 _CONFIG_FILE = DEFAULT_CONFIG_FILE
 
 
+def _is_loopback_host(host: str) -> bool:
+    return host in {"127.0.0.1", "localhost", "::1"}
+
+
+def _close_ctx_db(ctx) -> None:
+    db = ctx.obj.get("db") if ctx.obj else None
+    if db is not None:
+        db.close()
+        ctx.obj["db"] = None
+
+
 def _get_db(ctx) -> DimensionalBase:
-    """Get or create a DimensionalBase instance from CLI context."""
     ctx.ensure_object(dict)
     if ctx.obj.get("db") is None:
         settings = RuntimeSettings.from_sources(config_path=_CONFIG_FILE)
@@ -48,6 +48,7 @@ def _get_db(ctx) -> DimensionalBase:
 def cli(ctx):
     """DimensionalBase — the protocol and database for AI communication."""
     ctx.ensure_object(dict)
+    ctx.call_on_close(lambda: _close_ctx_db(ctx))
 
 
 @cli.command()
@@ -57,7 +58,6 @@ def init(path):
     config = {"db_path": path, "prefer_embedding": None}
     with open(_CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=2)
-    # Create the DB to initialize schema
     db = build_database(RuntimeSettings(db_path=path))
     db.close()
     click.echo(f"Initialized DimensionalBase at {path}")
@@ -80,7 +80,6 @@ def put(ctx, path, value, owner, entry_type, confidence, ttl, refs):
     entry = db.put(path=path, value=value, owner=owner, type=entry_type,
                    confidence=confidence, ttl=ttl, refs=refs_list)
     click.echo(f"Stored: {entry.path} (v{entry.version}, {entry.type.value}, conf={entry.confidence})")
-    db.close()
 
 
 @cli.command()
@@ -97,15 +96,22 @@ def get(ctx, scope, budget, query, owner, entry_type, fmt):
     result = db.get(scope=scope, budget=budget, query=query, owner=owner, type=entry_type)
     if fmt == "json":
         entries = []
-        for e in result.entries:
+        for entry in result.entries:
             entries.append({
-                "path": e.path, "value": e.value, "owner": e.owner,
-                "type": e.type.value, "confidence": e.confidence,
-                "version": e.version, "raw_score": e._raw_score, "score": e._score,
+                "path": entry.path,
+                "value": entry.value,
+                "owner": entry.owner,
+                "type": entry.type.value,
+                "confidence": entry.confidence,
+                "version": entry.version,
+                "raw_score": entry._raw_score,
+                "score": entry._score,
             })
         click.echo(json.dumps({
-            "entries": entries, "total_matched": result.total_matched,
-            "tokens_used": result.tokens_used, "budget_remaining": result.budget_remaining,
+            "entries": entries,
+            "total_matched": result.total_matched,
+            "tokens_used": result.tokens_used,
+            "budget_remaining": result.budget_remaining,
         }, indent=2))
     else:
         if not result.entries:
@@ -118,10 +124,9 @@ def get(ctx, scope, budget, query, owner, entry_type, fmt):
                     result.tokens_used, result.budget_remaining,
                 ))
             except Exception:
-                for e in result.entries:
-                    click.echo(f"  [{e.path}] ({e.owner}, conf={e.confidence:.2f}): {e.value}")
+                for entry in result.entries:
+                    click.echo(f"  [{entry.path}] ({entry.owner}, conf={entry.confidence:.2f}): {entry.value}")
                 click.echo(f"\n  {result.total_matched} matched, {result.tokens_used} tokens used")
-    db.close()
 
 
 @cli.command()
@@ -130,24 +135,23 @@ def get(ctx, scope, budget, query, owner, entry_type, fmt):
 def status(ctx, fmt):
     """Show database status."""
     db = _get_db(ctx)
-    s = db.status()
+    report = db.status()
     if fmt == "json":
-        click.echo(json.dumps(s, indent=2, default=str))
+        click.echo(json.dumps(report, indent=2, default=str))
     else:
         try:
             from dimensionalbase.cli.formatters import format_status_table
-            click.echo(format_status_table(s))
+            click.echo(format_status_table(report))
         except Exception:
-            click.echo(f"  Entries:       {s['entries']}")
-            click.echo(f"  Channel:       {s['channel']}")
-            click.echo(f"  Embeddings:    {s['embeddings']}")
-            click.echo(f"  Reasoning:     {s['reasoning']}")
-            click.echo(f"  Subscriptions: {s['subscriptions']}")
-            click.echo(f"  Uptime:        {s['uptime_seconds']}s")
-            click.echo(f"  Puts/Gets:     {s['total_puts']}/{s['total_gets']}")
-            if s.get('agents'):
-                click.echo(f"  Agents:        {list(s['agents'].keys())}")
-    db.close()
+            click.echo(f"  Entries:       {report['entries']}")
+            click.echo(f"  Channel:       {report['channel']}")
+            click.echo(f"  Embeddings:    {report['embeddings']}")
+            click.echo(f"  Reasoning:     {report['reasoning']}")
+            click.echo(f"  Subscriptions: {report['subscriptions']}")
+            click.echo(f"  Uptime:        {report['uptime_seconds']}s")
+            click.echo(f"  Puts/Gets:     {report['total_puts']}/{report['total_gets']}")
+            if report.get("agents"):
+                click.echo(f"  Agents:        {list(report['agents'].keys())}")
 
 
 @cli.command("trust-report")
@@ -169,9 +173,8 @@ def trust_report(ctx, fmt):
             except Exception:
                 for agent_id, data in report.items():
                     trust = data.get("global_trust", 0)
-                    pr = data.get("pagerank_trust", 0)
-                    click.echo(f"  {agent_id}: trust={trust:.3f}, pagerank={pr:.3f}")
-    db.close()
+                    pagerank = data.get("pagerank_trust", 0)
+                    click.echo(f"  {agent_id}: trust={trust:.3f}, pagerank={pagerank:.3f}")
 
 
 @cli.command()
@@ -179,9 +182,7 @@ def trust_report(ctx, fmt):
 def topology(ctx):
     """Show knowledge topology."""
     db = _get_db(ctx)
-    topo = db.knowledge_topology()
-    click.echo(json.dumps(topo, indent=2, default=str))
-    db.close()
+    click.echo(json.dumps(db.knowledge_topology(), indent=2, default=str))
 
 
 @cli.command()
@@ -200,7 +201,6 @@ def lineage(ctx, path):
         except Exception:
             for node in chain:
                 click.echo(f"  {node}")
-    db.close()
 
 
 @cli.command()
@@ -214,7 +214,6 @@ def delete(ctx, path):
         click.echo(f"  Deleted: {path}")
     else:
         click.echo(f"  Not found: {path}")
-    db.close()
 
 
 @cli.command("export")
@@ -226,12 +225,17 @@ def export_db(ctx, output, fmt):
     db = _get_db(ctx)
     result = db.get(scope="**", budget=999999)
     entries = []
-    for e in result.entries:
+    for entry in result.entries:
         entries.append({
-            "path": e.path, "value": e.value, "owner": e.owner,
-            "type": e.type.value, "confidence": e.confidence,
-            "refs": e.refs, "version": e.version, "ttl": e.ttl.value,
-            "metadata": e.metadata,
+            "path": entry.path,
+            "value": entry.value,
+            "owner": entry.owner,
+            "type": entry.type.value,
+            "confidence": entry.confidence,
+            "refs": entry.refs,
+            "version": entry.version,
+            "ttl": entry.ttl.value,
+            "metadata": entry.metadata,
         })
     data = json.dumps({"entries": entries, "count": len(entries)}, indent=2)
     if output:
@@ -240,7 +244,6 @@ def export_db(ctx, output, fmt):
         click.echo(f"  Exported {len(entries)} entries to {output}")
     else:
         click.echo(data)
-    db.close()
 
 
 @cli.command("import")
@@ -253,16 +256,19 @@ def import_db(ctx, file):
         data = json.load(f)
     entries = data.get("entries", [])
     count = 0
-    for e in entries:
+    for entry in entries:
         db.put(
-            path=e["path"], value=e["value"], owner=e["owner"],
-            type=e.get("type", "fact"), confidence=e.get("confidence", 1.0),
-            refs=e.get("refs", []), ttl=e.get("ttl", "session"),
-            metadata=e.get("metadata", {}),
+            path=entry["path"],
+            value=entry["value"],
+            owner=entry["owner"],
+            type=entry.get("type", "fact"),
+            confidence=entry.get("confidence", 1.0),
+            refs=entry.get("refs", []),
+            ttl=entry.get("ttl", "session"),
+            metadata=entry.get("metadata", {}),
         )
         count += 1
     click.echo(f"  Imported {count} entries from {file}")
-    db.close()
 
 
 @cli.command()
@@ -311,9 +317,28 @@ def serve(ctx, host, port, config_path, api_key, admin_agent_id, prefer_embeddin
         click.echo("Demo data loaded.")
 
     db = wrap_for_server(db_instance, settings)
-    app = create_app(db)
+    if not settings.secure:
+        click.echo(
+            "WARNING: DimensionalBase is starting with authentication disabled.",
+            err=True,
+        )
+        if not _is_loopback_host(settings.host):
+            click.echo(
+                f"WARNING: insecure mode on {settings.host} exposes the server to the network.",
+                err=True,
+            )
 
-    dashboard_url = f"http://{settings.host if settings.host != '0.0.0.0' else 'localhost'}:{settings.port}/dashboard/"
+    app = create_app(db, server_config={
+        "cors_origins": [o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+        "cors_origin_regex": settings.cors_origin_regex,
+        "rate_limit_read": settings.rate_limit_read,
+        "rate_limit_write": settings.rate_limit_write,
+        "max_request_body_bytes": settings.max_request_body_bytes,
+        "request_timeout_seconds": settings.request_timeout_seconds,
+    })
+
+    dashboard_host = "localhost" if _is_loopback_host(settings.host) else settings.host
+    dashboard_url = f"http://{dashboard_host}:{settings.port}/dashboard/"
     click.echo(f"Starting DimensionalBase server at {settings.host}:{settings.port} (db: {settings.db_path})")
     if seed_demo:
         click.echo(f"Dashboard: {dashboard_url}")

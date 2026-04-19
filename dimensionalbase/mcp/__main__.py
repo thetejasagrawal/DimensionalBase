@@ -1,8 +1,5 @@
 """
 Entry point for ``python -m dimensionalbase.mcp`` or ``dimensionalbase-mcp``.
-
-Starts the MCP server over stdio transport so Claude Code, Cursor, etc.
-can connect to a shared DimensionalBase instance.
 """
 
 from __future__ import annotations
@@ -12,14 +9,21 @@ import asyncio
 import sys
 
 
+def _missing_mcp_message() -> str:
+    if sys.version_info < (3, 10):
+        return (
+            "Error: dimensionalbase[mcp] requires Python 3.10+ because the upstream "
+            "'mcp' package does not support Python 3.9."
+        )
+    return "Error: The 'mcp' package is required. Install it with: pip install dimensionalbase[mcp]"
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="DimensionalBase MCP Server",
-    )
+    parser = argparse.ArgumentParser(description="DimensionalBase MCP Server")
     parser.add_argument(
         "--db-path",
-        default=":memory:",
-        help="SQLite database path (default: in-memory)",
+        default="./dimensionalbase.db",
+        help="SQLite database path (default: ./dimensionalbase.db)",
     )
     parser.add_argument(
         "--embedding-provider",
@@ -34,11 +38,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Import here to avoid slow startup if just checking --help
     from dimensionalbase import DimensionalBase
     from dimensionalbase.mcp.server import create_server
 
-    # Determine embedding provider
     provider = None
     if args.embedding_provider == "none":
         from dimensionalbase.embeddings.provider import NullEmbeddingProvider
@@ -56,11 +58,7 @@ def main() -> None:
         try:
             from mcp.server.stdio import stdio_server
         except ImportError:
-            print(
-                "Error: The 'mcp' package is required. "
-                "Install it with: pip install dimensionalbase[mcp]",
-                file=sys.stderr,
-            )
+            print(_missing_mcp_message(), file=sys.stderr)
             sys.exit(1)
 
         async with stdio_server() as (read_stream, write_stream):

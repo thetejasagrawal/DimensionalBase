@@ -9,6 +9,10 @@ from dimensionalbase.security.middleware import SecureDimensionalBase
 
 
 class TestRuntimeSettings:
+    def test_server_defaults_bind_to_loopback(self):
+        settings = ServerSettings.from_sources(environ={})
+        assert settings.host == "127.0.0.1"
+
     def test_legacy_embedding_provider_config_is_respected(self, tmp_path):
         config_path = tmp_path / "dmb.json"
         config_path.write_text(json.dumps({"db_path": "runtime.db", "embedding_provider": "local"}))

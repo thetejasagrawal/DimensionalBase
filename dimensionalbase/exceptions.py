@@ -32,3 +32,11 @@ class SchemaVersionError(StorageError):
 
 class BudgetExhaustedError(DimensionalBaseError):
     """Raised when a token budget cannot accommodate any entries."""
+
+
+class ConflictError(DimensionalBaseError):
+    """Raised when a write conflicts with existing knowledge (contradiction)."""
+
+
+class RateLimitError(DimensionalBaseError):
+    """Raised when an API rate limit is exceeded."""

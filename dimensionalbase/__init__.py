@@ -34,9 +34,11 @@ from dimensionalbase.core.entry import KnowledgeEntry
 from dimensionalbase.exceptions import (
     BudgetExhaustedError,
     ChannelError,
+    ConflictError,
     DimensionalBaseError,
     EmbeddingError,
     EntryValidationError,
+    RateLimitError,
     SchemaVersionError,
     StorageError,
 )
@@ -60,4 +62,6 @@ __all__ = [
     "EmbeddingError",
     "SchemaVersionError",
     "BudgetExhaustedError",
+    "ConflictError",
+    "RateLimitError",
 ]

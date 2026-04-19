@@ -6,11 +6,11 @@ Thank you for your interest in contributing to DimensionalBase!
 
 ```bash
 # Clone the repo
-git clone https://github.com/txtgrey/DimensionalBase.git
+git clone https://github.com/thetejasagrawal/DimensionalBase.git
 cd DimensionalBase
 
-# Install in development mode with all dev dependencies
-pip install -e ".[dev]"
+# Install in development mode with the main test/server/security extras
+pip install -e ".[dev,server,security]"
 
 # Install pre-commit hooks
 pre-commit install
@@ -27,6 +27,16 @@ pytest tests/ -v --cov=dimensionalbase --cov-report=term-missing
 
 # Run a specific test file
 pytest tests/test_core.py -v
+```
+
+## Packaging Checks
+
+```bash
+# Build source and wheel artifacts
+python -m build
+
+# Validate package metadata and README rendering
+python -m twine check dist/*
 ```
 
 ## Code Style

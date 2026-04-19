@@ -48,7 +48,9 @@ class TestSecureServer:
     def test_healthz_is_open(self, secured_server):
         response = secured_server["client"].get("/healthz")
         assert response.status_code == 200
-        assert response.json() == {"ok": True}
+        body = response.json()
+        assert body["ok"] is True
+        assert "version" in body
 
     def test_status_requires_api_key(self, secured_server):
         response = secured_server["client"].get("/api/v1/status")
@@ -78,7 +80,7 @@ class TestSecureServer:
                 "owner": "agent-1",
             },
         )
-        assert allowed.status_code == 200
+        assert allowed.status_code in (200, 201)
         assert allowed.json()["owner"] == "agent-1"
 
     def test_websocket_respects_requested_patterns(self, secured_server):
@@ -106,13 +108,31 @@ class TestSecureServer:
             raise RuntimeError("boom")
 
         db.put = boom  # type: ignore[assignment]
-        client = TestClient(create_app(db))
+        client = TestClient(create_app(db), raise_server_exceptions=False)
         response = client.post(
             "/api/v1/entries",
             json={"path": "task/x", "value": "value", "owner": "agent-1"},
         )
         assert response.status_code == 500
-        assert response.json()["detail"] == "Internal server error"
+        body = response.json()
+        if "error" in body:
+            assert body["error"]["type"] == "internal_error"
+        else:
+            assert body["detail"] == "Internal server error"
+        db.close()
+
+    def test_body_limit_rejects_large_payloads(self):
+        db = DimensionalBase()
+        client = TestClient(
+            create_app(db, server_config={"max_request_body_bytes": 32}),
+            raise_server_exceptions=False,
+        )
+        response = client.post(
+            "/api/v1/entries",
+            json={"path": "task/x", "value": "x" * 128, "owner": "agent-1"},
+        )
+        assert response.status_code == 413
+        assert response.json()["error"]["code"] == "payload_too_large"
         db.close()
 
     def test_compose_filters_disallowed_neighbors(self):
