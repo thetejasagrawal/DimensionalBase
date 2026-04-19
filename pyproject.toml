@@ -44,7 +44,7 @@ cli = ["click>=8,<9", "rich>=13,<15"]
 langchain = ["langchain-core>=0.2,<1"]
 crewai = ["crewai>=0.41,<1", "crewai-tools>=0.8,<1"]
 security = ["cryptography>=41,<46"]
-distributed = ["psycopg2-binary>=2.9,<3", "redis>=5,<7"]
+distributed = ["psycopg2-binary>=2.9,<3", "redis>=5,<8"]
 bench = ["openai>=1,<2", "anthropic>=0.37,<1"]
 dev = [
     "pytest>=7,<9",
@@ -73,7 +73,7 @@ all = [
     "crewai-tools>=0.8,<1",
     "cryptography>=41,<46",
     "psycopg2-binary>=2.9,<3",
-    "redis>=5,<7",
+    "redis>=5,<8",
     "anthropic>=0.37,<1",
 ]
 
